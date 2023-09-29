@@ -1,11 +1,52 @@
 import { CircularProgress, Slide, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import "./App.css";
+import axios from 'axios';
 
 
 
 function App() {
-  const [cityName, setCityName] = useState("Rome");
+
+  // For Auto Loaction Nearest City
+  // const [userLocation, setUserLocation] = useState(null);
+  const [nearestCity, setNearestCity] = useState("Medinipur");
+
+  useEffect(() => {
+    // Get user's geolocation
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        // setUserLocation({ latitude, longitude });
+  
+        // Send the coordinates to the server
+        axios
+          .get(`/nearest-city?latitude=${latitude}&longitude=${longitude}`)
+          .then((response) => {
+            const nearestCityArray = response.data.nearestCity;
+  
+            if (nearestCityArray && nearestCityArray.length > 0) {
+              // Access the first element of the array
+
+              const city = nearestCityArray[0];
+              setNearestCity(city);
+            } else {
+              // Handle the case where the array is empty
+              setNearestCity("Kolkata"); // Default to Kolkata
+            }
+          })
+          .catch((error) => {
+            console.error('Error fetching nearest city:', error);
+          });
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+      }
+    );
+  }, []);
+
+
+
+  const [cityName, setCityName] = useState(nearestCity);
   const [inputText, setInputText] = useState("");
   const [data, setData] = useState({});
   const [error, setError] = useState(false);
@@ -13,7 +54,7 @@ function App() {
 
   useEffect(() => {
     fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=f35e1c39d76e47b8cfc0ab69bd961953&units=metric`   
+      `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=f35e1c39d76e47b8cfc0ab69bd961953&units=metric`
     )
       .then((res) => {
         if (res.status === 200) {
